@@ -264,6 +264,8 @@ public final class FirebaseBootstrap {
             "returnDate", "",
             "issued", issued
         ));
+        // mark the book as issued in the books collection
+        setBookIssuedStatus(bookId, true);
     }
 
     public static void updateIssueRecordReturn(String bookId, String registrationNo, String returnDate, String issued) throws Exception {
@@ -286,12 +288,52 @@ public final class FirebaseBootstrap {
             "returnDate", returnDate,
             "issued", issued
         ));
+        // update book issued flag based on issued status
+        setBookIssuedStatus(bookId, !"no".equalsIgnoreCase(issued));
     }
 
     public static void deleteIssueRecord(String bookId, String registrationNo) throws Exception {
         requireNonBlank(bookId, "Book ID");
         requireNonBlank(registrationNo, "Registration No");
         deleteDocument("issue_records", issueDocumentId(bookId, registrationNo));
+        // when issue record deleted, mark book as available
+        try {
+            setBookIssuedStatus(bookId, false);
+        } catch (Exception ex) {
+            // non-fatal: don't fail delete if book update cannot be applied
+        }
+    }
+
+    public static void setBookIssuedStatus(String bookId, boolean issued) throws Exception {
+        requireNonBlank(bookId, "Book ID");
+        Map<String, String> book = getBook(bookId);
+        if (book == null) {
+            throw new IllegalStateException("Book not found: " + bookId);
+        }
+        book.put("issued", issued ? "yes" : "no");
+        // ensure we persist the updated issued flag
+        upsertFirestoreDocument("books", bookId, book);
+    }
+
+    public static String generateBookId() throws Exception {
+        // Try to generate a numeric incrementing ID based on existing numeric bookIds.
+        List<Map<String, String>> books = listBooks();
+        long max = -1;
+        for (Map<String, String> b : books) {
+            String id = b.getOrDefault("bookId", b.getOrDefault("_id", ""));
+            if (id == null || id.isBlank()) continue;
+            try {
+                long v = Long.parseLong(id);
+                if (v > max) max = v;
+            } catch (NumberFormatException ignored) {
+                // ignore non-numeric ids
+            }
+        }
+        if (max >= 0) {
+            return String.valueOf(max + 1);
+        }
+        // fallback: timestamp-based id
+        return String.valueOf(System.currentTimeMillis());
     }
 
     private static ServiceAccount loadServiceAccount() throws Exception {

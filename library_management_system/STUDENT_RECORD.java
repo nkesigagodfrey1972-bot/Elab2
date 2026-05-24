@@ -1,7 +1,11 @@
 package library_management_system;
 
 import java.awt.BorderLayout;
-import java.awt.GridLayout;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.util.Map;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -27,25 +31,49 @@ public class STUDENT_RECORD extends JFrame {
         setTitle("Student Record");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        JPanel form = new JPanel(new GridLayout(4, 2, 8, 8));
-        form.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
+        JPanel form = new JPanel(new GridBagLayout());
+        form.setBorder(BorderFactory.createEmptyBorder(18, 18, 12, 18));
+        java.awt.GridBagConstraints gbc = new java.awt.GridBagConstraints();
+        gbc.insets = new java.awt.Insets(8, 8, 8, 8);
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        form.add(new JLabel("REGISTRATION_NO"));
-        form.add(prn);
-        form.add(new JLabel("STUDENT_NAME"));
-        form.add(name);
-        form.add(new JLabel("MOBILE_NO"));
-        form.add(mob);
-        form.add(new JLabel("BRANCH"));
-        form.add(branch);
+        gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 0.0;
+        form.add(new JLabel("REGISTRATION NO"), gbc);
+        gbc.gridx = 1; gbc.gridy = 0; gbc.weightx = 1.0;
+        prn.setPreferredSize(new Dimension(220, 28));
+        form.add(prn, gbc);
 
-        JPanel buttons = new JPanel(new GridLayout(2, 3, 8, 8));
-        JButton searchButton = new JButton("SEARCH");
-        JButton addButton = new JButton("ADD RECORD");
-        JButton updateButton = new JButton("UPDATE");
-        JButton deleteButton = new JButton("DELETE");
-        JButton clearButton = new JButton("CLEAR");
-        JButton homeButton = new JButton("HOME");
+        gbc.gridx = 0; gbc.gridy = 1; gbc.weightx = 0.0;
+        form.add(new JLabel("STUDENT NAME"), gbc);
+        gbc.gridx = 1; gbc.gridy = 1; gbc.weightx = 1.0;
+        name.setPreferredSize(new Dimension(360, 28));
+        form.add(name, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 2; gbc.weightx = 0.0;
+        form.add(new JLabel("MOBILE NO"), gbc);
+        gbc.gridx = 1; gbc.gridy = 2; gbc.weightx = 1.0;
+        form.add(mob, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 3; gbc.weightx = 0.0;
+        form.add(new JLabel("BRANCH"), gbc);
+        gbc.gridx = 1; gbc.gridy = 3; gbc.weightx = 1.0;
+        form.add(branch, gbc);
+
+        JPanel buttons = new JPanel();
+        buttons.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.CENTER, 12, 6));
+        JButton searchButton = new JButton("Search");
+        JButton addButton = new JButton("Add record");
+        JButton updateButton = new JButton("Update");
+        JButton deleteButton = new JButton("Delete");
+        JButton clearButton = new JButton("Clear");
+        JButton homeButton = new JButton("Home");
+        UiTheme.decorateIconButton(searchButton, "users", UiTheme.ACCENT_BLUE);
+        UiTheme.decorateIconButton(addButton, "users", UiTheme.ACCENT);
+        UiTheme.decorateIconButton(updateButton, "refresh", UiTheme.ACCENT_BLUE);
+        UiTheme.decorateIconButton(deleteButton, "issue", new Color(206, 100, 20));
+        UiTheme.decorateIconButton(clearButton, "export", UiTheme.ACCENT_DARK);
+        UiTheme.decorateIconButton(homeButton, "home", UiTheme.ACCENT_BLUE);
 
         searchButton.addActionListener(evt -> searchStudent());
         addButton.addActionListener(evt -> addStudent());
@@ -88,7 +116,17 @@ public class STUDENT_RECORD extends JFrame {
 
     private void addStudent() {
         try {
-            FirebaseBootstrap.saveStudent(prn.getText().trim(), name.getText().trim(), mob.getText().trim(), branch.getText().trim());
+            String id = prn.getText().trim();
+            String studentName = name.getText().trim();
+            if (id.isBlank()) {
+                JOptionPane.showMessageDialog(this, "Registration number is required", "Validation", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            if (studentName.isBlank()) {
+                JOptionPane.showMessageDialog(this, "Student name is required", "Validation", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            FirebaseBootstrap.saveStudent(id, studentName, mob.getText().trim(), branch.getText().trim());
             JOptionPane.showMessageDialog(this, "Record added successfully");
             clearFields();
         } catch (Exception ex) {
@@ -98,7 +136,12 @@ public class STUDENT_RECORD extends JFrame {
 
     private void updateStudent() {
         try {
-            FirebaseBootstrap.updateStudent(prn.getText().trim(), name.getText().trim(), mob.getText().trim(), branch.getText().trim());
+            String id = prn.getText().trim();
+            if (id.isBlank()) {
+                JOptionPane.showMessageDialog(this, "Registration number is required to update", "Validation", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            FirebaseBootstrap.updateStudent(id, name.getText().trim(), mob.getText().trim(), branch.getText().trim());
             JOptionPane.showMessageDialog(this, "Updated successfully");
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Update failed: " + ex.getMessage());
@@ -107,7 +150,12 @@ public class STUDENT_RECORD extends JFrame {
 
     private void deleteStudent() {
         try {
-            FirebaseBootstrap.deleteStudent(prn.getText().trim());
+            String id = prn.getText().trim();
+            if (id.isBlank()) {
+                JOptionPane.showMessageDialog(this, "Registration number is required to delete", "Validation", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            FirebaseBootstrap.deleteStudent(id);
             JOptionPane.showMessageDialog(this, "Deleted successfully");
             clearFields();
         } catch (Exception ex) {

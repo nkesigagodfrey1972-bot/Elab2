@@ -51,11 +51,11 @@ public class Dashboard extends JFrame {
         setSize(1180, 760);
         setLocationRelativeTo(null);
 
-        JPanel root = new JPanel(new BorderLayout(20, 20));
-        root.setBorder(new EmptyBorder(22, 22, 22, 22));
+        JPanel root = new JPanel(new BorderLayout(24, 24));
+        root.setBorder(new EmptyBorder(28, 28, 28, 28));
         root.setBackground(UiTheme.BACKGROUND);
 
-        JPanel hero = new JPanel(new BorderLayout(18, 0));
+        JPanel hero = new JPanel(new BorderLayout(20, 0));
         hero.setOpaque(false);
         hero.putClientProperty("ui.theme.keepBackground", Boolean.TRUE);
 
@@ -87,19 +87,19 @@ public class Dashboard extends JFrame {
         hero.add(heroText, BorderLayout.CENTER);
 
         JButton refreshButton = createActionButton("Refresh stats", "refresh", UiTheme.ACCENT_BLUE, evt -> refreshStats());
-        refreshButton.setPreferredSize(new Dimension(160, 40));
+        refreshButton.setPreferredSize(new Dimension(170, 44));
         hero.add(refreshButton, BorderLayout.EAST);
 
-        JPanel statsGrid = new JPanel(new GridLayout(2, 1, 16, 16));
+        JPanel statsGrid = new JPanel(new GridLayout(2, 1, 20, 20));
         statsGrid.setOpaque(false);
         statsGrid.putClientProperty("ui.theme.keepBackground", Boolean.TRUE);
-        JPanel featuredRow = new JPanel(new GridLayout(1, 2, 16, 16));
+        JPanel featuredRow = new JPanel(new GridLayout(1, 2, 20, 20));
         featuredRow.setOpaque(false);
         featuredRow.putClientProperty("ui.theme.keepBackground", Boolean.TRUE);
         featuredRow.add(createStatCard("Books in catalog", booksValue, UiTheme.ACCENT_BLUE, true));
         featuredRow.add(createStatCard("Issued items", issuedValue, UiTheme.ACCENT, true));
 
-        JPanel supportRow = new JPanel(new GridLayout(1, 2, 16, 16));
+        JPanel supportRow = new JPanel(new GridLayout(1, 2, 20, 20));
         supportRow.setOpaque(false);
         supportRow.putClientProperty("ui.theme.keepBackground", Boolean.TRUE);
         supportRow.add(createStatCard("Registered students", studentsValue, new Color(62, 106, 214), false));
@@ -112,7 +112,7 @@ public class Dashboard extends JFrame {
         actionsPanel.putClientProperty("ui.theme.keepBackground", Boolean.TRUE);
         actionsPanel.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(new Color(214, 224, 236), 1, true),
-            new EmptyBorder(18, 18, 18, 18)
+            new EmptyBorder(20, 20, 20, 20)
         ));
         actionsPanel.setBackground(Color.WHITE);
 
@@ -127,13 +127,13 @@ public class Dashboard extends JFrame {
         JButton exportBooks = createActionButton("Export books CSV", "export", UiTheme.ACCENT_BLUE, evt -> exportBooksCsv());
         JButton exportIssues = createActionButton("Export issue CSV", "export", UiTheme.ACCENT, evt -> exportIssueCsv());
 
-        JPanel buttonRow1 = new JPanel(new GridLayout(1, 3, 10, 10));
+        JPanel buttonRow1 = new JPanel(new GridLayout(1, 3, 12, 12));
         buttonRow1.setOpaque(false);
         buttonRow1.add(openHome);
         buttonRow1.add(books);
         buttonRow1.add(students);
 
-        JPanel buttonRow2 = new JPanel(new GridLayout(1, 3, 10, 10));
+        JPanel buttonRow2 = new JPanel(new GridLayout(1, 3, 12, 12));
         buttonRow2.setOpaque(false);
         buttonRow2.add(issues);
         buttonRow2.add(exportBooks);
@@ -143,19 +143,19 @@ public class Dashboard extends JFrame {
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.anchor = GridBagConstraints.WEST;
-        gbc.insets = new Insets(0, 0, 14, 0);
+        gbc.insets = new Insets(0, 0, 16, 0);
         actionsPanel.add(actionTitle, gbc);
         gbc.gridy = 1;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         actionsPanel.add(buttonRow1, gbc);
         gbc.gridy = 2;
-        gbc.insets = new Insets(10, 0, 0, 0);
+        gbc.insets = new Insets(12, 0, 0, 0);
         actionsPanel.add(buttonRow2, gbc);
 
         overview.setEditable(false);
         overview.setLineWrap(true);
         overview.setWrapStyleWord(true);
-        overview.setBorder(new EmptyBorder(12, 12, 12, 12));
+        overview.setBorder(new EmptyBorder(14, 14, 14, 14));
         overview.setBackground(new Color(250, 252, 251));
         overview.setForeground(UiTheme.TEXT);
         overview.setText("This dashboard gives staff a quick operational snapshot and shortcuts to the core workflows. Use the export buttons to create CSV backups for reporting or spreadsheet review.");
@@ -166,7 +166,7 @@ public class Dashboard extends JFrame {
             new EmptyBorder(0, 0, 0, 0)
         ));
 
-        JPanel lowerGrid = new JPanel(new GridLayout(1, 2, 16, 16));
+        JPanel lowerGrid = new JPanel(new GridLayout(1, 2, 20, 20));
         lowerGrid.setOpaque(false);
         lowerGrid.putClientProperty("ui.theme.keepBackground", Boolean.TRUE);
         lowerGrid.add(actionsPanel);

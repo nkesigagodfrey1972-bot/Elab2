@@ -1,7 +1,11 @@
 package library_management_system;
 
 import java.awt.BorderLayout;
-import java.awt.GridLayout;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.util.Map;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -27,26 +31,69 @@ public class SEARCH_RECORD extends JFrame {
         setTitle("Book Record");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        JPanel form = new JPanel(new GridLayout(5, 2, 8, 8));
-        form.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
+        JPanel form = new JPanel(new GridBagLayout());
+        form.setBorder(BorderFactory.createEmptyBorder(18, 18, 12, 18));
 
-        form.add(new JLabel("BOOK_ID"));
-        form.add(bookId);
-        form.add(new JLabel("BOOK_NAME"));
-        form.add(bookName);
-        form.add(new JLabel("AUTHOR_NAME"));
-        form.add(authorName);
-        form.add(new JLabel("PUBLISHER_NAME"));
-        form.add(publisherName);
-        form.add(new JLabel("QUANTITY"));
-        form.add(quantity);
-        JPanel buttons = new JPanel(new GridLayout(2, 3, 8, 8));
-        JButton searchButton = new JButton("SEARCH");
-        JButton addButton = new JButton("ADD RECORD");
-        JButton updateButton = new JButton("UPDATE");
-        JButton deleteButton = new JButton("DELETE");
-        JButton clearButton = new JButton("CLEAR");
-        JButton homeButton = new JButton("HOME");
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(8, 8, 8, 8);
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 0.0;
+        form.add(new JLabel("BOOK ID"), gbc);
+        gbc.gridx = 1; gbc.gridy = 0; gbc.weightx = 1.0;
+        bookId.setPreferredSize(new Dimension(220, 28));
+        form.add(bookId, gbc);
+
+        java.awt.GridBagConstraints btnGbc = (java.awt.GridBagConstraints) gbc.clone();
+        btnGbc.gridx = 2; btnGbc.gridy = 0; btnGbc.weightx = 0.0; btnGbc.fill = GridBagConstraints.NONE;
+        JButton genIdBtn = new JButton("Generate");
+        genIdBtn.setPreferredSize(new Dimension(110, 28));
+        genIdBtn.addActionListener(evt -> {
+            try {
+                String id = FirebaseBootstrap.generateBookId();
+                bookId.setText(id);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Could not generate Book ID: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+        form.add(genIdBtn, btnGbc);
+
+        gbc.gridx = 0; gbc.gridy = 1; gbc.weightx = 0.0;
+        form.add(new JLabel("BOOK NAME"), gbc);
+        gbc.gridx = 1; gbc.gridy = 1; gbc.weightx = 1.0;
+        bookName.setPreferredSize(new Dimension(360, 28));
+        form.add(bookName, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 2; gbc.weightx = 0.0;
+        form.add(new JLabel("AUTHOR"), gbc);
+        gbc.gridx = 1; gbc.gridy = 2; gbc.weightx = 1.0;
+        form.add(authorName, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 3; gbc.weightx = 0.0;
+        form.add(new JLabel("CATEGORY"), gbc);
+        gbc.gridx = 1; gbc.gridy = 3; gbc.weightx = 1.0;
+        form.add(publisherName, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 4; gbc.weightx = 0.0;
+        form.add(new JLabel("PRICE"), gbc);
+        gbc.gridx = 1; gbc.gridy = 4; gbc.weightx = 1.0;
+        form.add(quantity, gbc);
+        JPanel buttons = new JPanel();
+        buttons.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.CENTER, 12, 6));
+        JButton searchButton = new JButton("Search");
+        JButton addButton = new JButton("Add record");
+        JButton updateButton = new JButton("Update");
+        JButton deleteButton = new JButton("Delete");
+        JButton clearButton = new JButton("Clear");
+        JButton homeButton = new JButton("Home");
+
+        UiTheme.decorateIconButton(searchButton, "book", UiTheme.ACCENT_BLUE);
+        UiTheme.decorateIconButton(addButton, "book", UiTheme.ACCENT);
+        UiTheme.decorateIconButton(updateButton, "refresh", UiTheme.ACCENT_BLUE);
+        UiTheme.decorateIconButton(deleteButton, "issue", new Color(206, 100, 20));
+        UiTheme.decorateIconButton(clearButton, "export", UiTheme.ACCENT_DARK);
+        UiTheme.decorateIconButton(homeButton, "home", UiTheme.ACCENT_BLUE);
 
         searchButton.addActionListener(evt -> searchBook());
         addButton.addActionListener(evt -> addBook());
@@ -90,7 +137,17 @@ public class SEARCH_RECORD extends JFrame {
 
     private void addBook() {
         try {
-            FirebaseBootstrap.saveBook(bookId.getText().trim(), bookName.getText().trim(), authorName.getText().trim(), publisherName.getText().trim(), quantity.getText().trim());
+            String id = bookId.getText().trim();
+            String name = bookName.getText().trim();
+            if (name.isBlank()) {
+                JOptionPane.showMessageDialog(this, "Book name is required", "Validation", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            if (id.isBlank()) {
+                id = FirebaseBootstrap.generateBookId();
+                bookId.setText(id);
+            }
+            FirebaseBootstrap.saveBook(id, name, authorName.getText().trim(), publisherName.getText().trim(), quantity.getText().trim());
             JOptionPane.showMessageDialog(this, "Record added successfully");
             clearFields();
         } catch (Exception ex) {
@@ -100,7 +157,12 @@ public class SEARCH_RECORD extends JFrame {
 
     private void updateBook() {
         try {
-            FirebaseBootstrap.saveBook(bookId.getText().trim(), bookName.getText().trim(), authorName.getText().trim(), publisherName.getText().trim(), quantity.getText().trim());
+            String id = bookId.getText().trim();
+            if (id.isBlank()) {
+                JOptionPane.showMessageDialog(this, "Book ID is required to update", "Validation", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            FirebaseBootstrap.updateBook(id, bookName.getText().trim(), authorName.getText().trim(), publisherName.getText().trim(), quantity.getText().trim());
             JOptionPane.showMessageDialog(this, "Updated successfully");
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Update failed: " + ex.getMessage());
@@ -109,7 +171,12 @@ public class SEARCH_RECORD extends JFrame {
 
     private void deleteBook() {
         try {
-            FirebaseBootstrap.deleteBook(bookId.getText().trim());
+            String id = bookId.getText().trim();
+            if (id.isBlank()) {
+                JOptionPane.showMessageDialog(this, "Book ID is required to delete", "Validation", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            FirebaseBootstrap.deleteBook(id);
             JOptionPane.showMessageDialog(this, "Deleted successfully");
             clearFields();
         } catch (Exception ex) {

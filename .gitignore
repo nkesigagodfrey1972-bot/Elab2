@@ -1,3 +1,6 @@
 *.class
 library_management_system/e-library-service-account.json
 e-library-service-account.json
+elab-library.jar
+out/
+*.jar

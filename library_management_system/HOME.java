@@ -38,11 +38,11 @@ public class HOME extends JFrame {
         setSize(1220, 800);
         setLocationRelativeTo(null);
 
-        JPanel root = new JPanel(new BorderLayout(20, 20));
-        root.setBorder(new EmptyBorder(22, 22, 22, 22));
+        JPanel root = new JPanel(new BorderLayout(24, 24));
+        root.setBorder(new EmptyBorder(28, 28, 28, 28));
         root.setBackground(UiTheme.BACKGROUND);
 
-        JPanel hero = new JPanel(new BorderLayout(18, 0));
+        JPanel hero = new JPanel(new BorderLayout(20, 0));
         hero.setOpaque(false);
         hero.putClientProperty("ui.theme.keepBackground", Boolean.TRUE);
 
@@ -72,9 +72,10 @@ public class HOME extends JFrame {
         hero.add(heroText, BorderLayout.CENTER);
 
         JButton refreshButton = createActionButton("Refresh", "refresh", UiTheme.ACCENT_BLUE, evt -> refreshMetrics());
+        refreshButton.setPreferredSize(new Dimension(170, 44));
         hero.add(refreshButton, BorderLayout.EAST);
 
-        JPanel metricsGrid = new JPanel(new GridLayout(1, 4, 16, 16));
+        JPanel metricsGrid = new JPanel(new GridLayout(1, 4, 20, 20));
         metricsGrid.setOpaque(false);
         metricsGrid.putClientProperty("ui.theme.keepBackground", Boolean.TRUE);
         metricsGrid.add(createMetricCard("Books", booksValue, UiTheme.ACCENT_BLUE));
@@ -86,7 +87,7 @@ public class HOME extends JFrame {
         navigationPanel.putClientProperty("ui.theme.keepBackground", Boolean.TRUE);
         navigationPanel.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(new Color(214, 224, 236), 1, true),
-            new EmptyBorder(18, 18, 18, 18)
+            new EmptyBorder(20, 20, 20, 20)
         ));
         navigationPanel.setBackground(Color.WHITE);
 
@@ -94,7 +95,7 @@ public class HOME extends JFrame {
         navTitle.setFont(navTitle.getFont().deriveFont(18f));
         navTitle.setForeground(UiTheme.TEXT);
 
-        JPanel navGrid = new JPanel(new GridLayout(3, 3, 10, 10));
+        JPanel navGrid = new JPanel(new GridLayout(3, 3, 12, 12));
         navGrid.setOpaque(false);
         navGrid.add(createNavButton("Books Catalog", "book", UiTheme.ACCENT, evt -> openWindow(new SEARCH_RECORD())));
         navGrid.add(createNavButton("Book ID Search", "book", UiTheme.ACCENT_BLUE, evt -> openWindow(new SEARCH_BOOKID())));
@@ -114,7 +115,7 @@ public class HOME extends JFrame {
         guidance.setEditable(false);
         guidance.setLineWrap(true);
         guidance.setWrapStyleWord(true);
-        guidance.setBorder(new EmptyBorder(12, 12, 12, 12));
+        guidance.setBorder(new EmptyBorder(14, 14, 14, 14));
         guidance.setBackground(new Color(250, 252, 251));
         guidance.setForeground(UiTheme.TEXT);
         guidance.setText("This screen acts as the staff operations center. Open a module, complete the task, then return here for the next workflow. The dashboard is the main overview screen for live counts and exports.");
@@ -123,7 +124,7 @@ public class HOME extends JFrame {
         guidancePane.putClientProperty("ui.theme.keepBackground", Boolean.TRUE);
         guidancePane.setBorder(BorderFactory.createLineBorder(new Color(214, 224, 236), 1, true));
 
-        JPanel lowerGrid = new JPanel(new GridLayout(1, 2, 16, 16));
+        JPanel lowerGrid = new JPanel(new GridLayout(1, 2, 20, 20));
         lowerGrid.setOpaque(false);
         lowerGrid.putClientProperty("ui.theme.keepBackground", Boolean.TRUE);
         lowerGrid.add(navigationPanel);
@@ -162,29 +163,49 @@ public class HOME extends JFrame {
     }
 
     private JPanel createMetricCard(String label, JLabel valueLabel, Color accent) {
-        JPanel card = new JPanel(new BorderLayout(8, 8));
+        RoundedCard card = new RoundedCard(false);
         card.putClientProperty("ui.theme.keepBackground", Boolean.TRUE);
-        card.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(214, 224, 236), 1, true),
-            new EmptyBorder(16, 16, 16, 16)
-        ));
-        card.setBackground(Color.WHITE);
+        card.setLayout(new BorderLayout(10, 10));
+        card.setBorder(new EmptyBorder(16, 16, 16, 16));
 
         JLabel title = new JLabel(label);
         title.setForeground(UiTheme.MUTED);
 
         valueLabel.setForeground(accent);
-        valueLabel.setFont(valueLabel.getFont().deriveFont(30f));
+        valueLabel.setFont(valueLabel.getFont().deriveFont(32f));
 
         JPanel inner = new JPanel();
         inner.setOpaque(false);
         inner.setLayout(new BoxLayout(inner, BoxLayout.Y_AXIS));
         inner.add(title);
-        inner.add(Box.createVerticalStrut(8));
+        inner.add(Box.createVerticalStrut(10));
         inner.add(valueLabel);
 
         card.add(inner, BorderLayout.CENTER);
         return card;
+    }
+
+    private static final class RoundedCard extends JPanel {
+
+        private final boolean featured;
+
+        private RoundedCard(boolean featured) {
+            this.featured = featured;
+            setOpaque(false);
+        }
+
+        @Override
+        protected void paintComponent(java.awt.Graphics graphics) {
+            super.paintComponent(graphics);
+            java.awt.Graphics2D g2 = (java.awt.Graphics2D) graphics.create();
+            g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+            java.awt.Paint paint = Color.WHITE;
+            g2.setPaint(paint);
+            g2.fillRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 20, 20);
+            g2.setColor(new Color(214, 224, 236));
+            g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 20, 20);
+            g2.dispose();
+        }
     }
 
     private JLabel createMetricValue() {
