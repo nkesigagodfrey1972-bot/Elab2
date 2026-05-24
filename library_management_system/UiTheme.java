@@ -5,6 +5,14 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.FontMetrics;
+import java.awt.GradientPaint;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.geom.Arc2D;
+import java.awt.geom.Path2D;
+import java.awt.geom.RoundRectangle2D;
+import java.awt.image.BufferedImage;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -80,6 +88,105 @@ public final class UiTheme {
         return badge;
     }
 
+    public static ImageIcon createLogoIcon(int size) {
+        BufferedImage image = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D graphics = image.createGraphics();
+        graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+        GradientPaint background = new GradientPaint(0, 0, ACCENT_DARK, size, size, ACCENT_BLUE);
+        graphics.setPaint(background);
+        graphics.fill(new RoundRectangle2D.Double(1, 1, size - 2, size - 2, size * 0.28, size * 0.28));
+
+        graphics.setColor(new Color(255, 255, 255, 26));
+        graphics.fill(new RoundRectangle2D.Double(size * 0.1, size * 0.12, size * 0.8, size * 0.28, size * 0.18, size * 0.18));
+
+        graphics.setColor(Color.WHITE);
+        graphics.setStroke(new java.awt.BasicStroke(Math.max(2f, size / 18f), java.awt.BasicStroke.CAP_ROUND, java.awt.BasicStroke.JOIN_ROUND));
+        int pad = Math.max(5, size / 8);
+        int yTop = size / 2 - size / 10;
+        int yBottom = size / 2 + size / 10;
+        graphics.drawLine(pad, yTop, pad, size - pad);
+        graphics.drawLine(size - pad, yTop, size - pad, size - pad);
+        graphics.drawLine(pad, yTop, size - pad, yTop);
+        graphics.drawLine(pad, yBottom, size - pad, yBottom);
+
+        graphics.setStroke(new java.awt.BasicStroke(Math.max(2f, size / 22f), java.awt.BasicStroke.CAP_ROUND, java.awt.BasicStroke.JOIN_ROUND));
+        graphics.setColor(new Color(255, 255, 255, 230));
+        graphics.draw(new Arc2D.Double(size * 0.23, size * 0.62, size * 0.22, size * 0.18, 205, 130, Arc2D.OPEN));
+        graphics.draw(new Arc2D.Double(size * 0.55, size * 0.62, size * 0.22, size * 0.18, 205, 130, Arc2D.OPEN));
+
+        graphics.setFont(new Font("Segoe UI", Font.BOLD, Math.max(16, size / 2)));
+        FontMetrics metrics = graphics.getFontMetrics();
+        int textWidth = metrics.stringWidth("EL");
+        int textX = (size - textWidth) / 2;
+        int textY = size / 2 + metrics.getAscent() / 3;
+        graphics.setColor(new Color(255, 255, 255, 244));
+        graphics.drawString("EL", textX, textY);
+
+        graphics.dispose();
+        return new ImageIcon(image);
+    }
+
+    public static ImageIcon createActionIcon(String kind, Color color, int size) {
+        BufferedImage image = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D graphics = image.createGraphics();
+        graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        graphics.setColor(color);
+        graphics.setStroke(new java.awt.BasicStroke(Math.max(1.8f, size / 10f), java.awt.BasicStroke.CAP_ROUND, java.awt.BasicStroke.JOIN_ROUND));
+
+        switch (kind) {
+            case "refresh":
+                graphics.draw(new Arc2D.Double(size * 0.15, size * 0.15, size * 0.7, size * 0.7, 45, 280, Arc2D.OPEN));
+                graphics.drawLine((int) (size * 0.78), (int) (size * 0.28), (int) (size * 0.88), (int) (size * 0.26));
+                graphics.drawLine((int) (size * 0.78), (int) (size * 0.28), (int) (size * 0.8), (int) (size * 0.18));
+                break;
+            case "home":
+                graphics.drawLine((int) (size * 0.18), (int) (size * 0.55), (int) (size * 0.5), (int) (size * 0.2));
+                graphics.drawLine((int) (size * 0.5), (int) (size * 0.2), (int) (size * 0.82), (int) (size * 0.55));
+                graphics.drawRect((int) (size * 0.28), (int) (size * 0.52), (int) (size * 0.44), (int) (size * 0.28));
+                graphics.drawLine((int) (size * 0.45), (int) (size * 0.8), (int) (size * 0.45), (int) (size * 0.62));
+                break;
+            case "book":
+                graphics.drawRoundRect((int) (size * 0.15), (int) (size * 0.18), (int) (size * 0.7), (int) (size * 0.64), size / 7, size / 7);
+                graphics.drawLine((int) (size * 0.5), (int) (size * 0.18), (int) (size * 0.5), (int) (size * 0.82));
+                graphics.drawLine((int) (size * 0.26), (int) (size * 0.34), (int) (size * 0.42), (int) (size * 0.34));
+                graphics.drawLine((int) (size * 0.58), (int) (size * 0.34), (int) (size * 0.74), (int) (size * 0.34));
+                break;
+            case "users":
+                graphics.draw(new java.awt.geom.Ellipse2D.Double(size * 0.2, size * 0.2, size * 0.22, size * 0.22));
+                graphics.draw(new java.awt.geom.Ellipse2D.Double(size * 0.54, size * 0.16, size * 0.22, size * 0.22));
+                graphics.draw(new java.awt.geom.Arc2D.Double(size * 0.1, size * 0.45, size * 0.38, size * 0.32, 0, 180, Arc2D.OPEN));
+                graphics.draw(new java.awt.geom.Arc2D.Double(size * 0.46, size * 0.41, size * 0.36, size * 0.34, 0, 180, Arc2D.OPEN));
+                break;
+            case "issue":
+                graphics.drawRoundRect((int) (size * 0.18), (int) (size * 0.12), (int) (size * 0.44), (int) (size * 0.68), size / 8, size / 8);
+                graphics.drawLine((int) (size * 0.4), (int) (size * 0.32), (int) (size * 0.72), (int) (size * 0.32));
+                graphics.drawLine((int) (size * 0.64), (int) (size * 0.24), (int) (size * 0.72), (int) (size * 0.32));
+                graphics.drawLine((int) (size * 0.64), (int) (size * 0.4), (int) (size * 0.72), (int) (size * 0.32));
+                graphics.drawLine((int) (size * 0.4), (int) (size * 0.52), (int) (size * 0.72), (int) (size * 0.52));
+                graphics.drawLine((int) (size * 0.4), (int) (size * 0.68), (int) (size * 0.72), (int) (size * 0.68));
+                break;
+            case "export":
+                graphics.drawLine((int) (size * 0.5), (int) (size * 0.18), (int) (size * 0.5), (int) (size * 0.62));
+                graphics.drawLine((int) (size * 0.36), (int) (size * 0.34), (int) (size * 0.5), (int) (size * 0.18));
+                graphics.drawLine((int) (size * 0.64), (int) (size * 0.34), (int) (size * 0.5), (int) (size * 0.18));
+                graphics.drawRoundRect((int) (size * 0.2), (int) (size * 0.58), (int) (size * 0.6), (int) (size * 0.22), size / 9, size / 9);
+                break;
+            default:
+                graphics.draw(new Path2D.Double());
+                break;
+        }
+
+        graphics.dispose();
+        return new ImageIcon(image);
+    }
+
+    public static void decorateIconButton(JButton button, String iconKind, Color color) {
+        button.setIcon(createActionIcon(iconKind, color, 16));
+        button.setHorizontalAlignment(SwingConstants.LEFT);
+        button.setIconTextGap(10);
+    }
+
     public static void styleTree(Component component) {
         if (component == null) {
             return;
@@ -152,7 +259,8 @@ public final class UiTheme {
 
         JPanel brand = new JPanel(new BorderLayout(12, 0));
         brand.setOpaque(false);
-        brand.add(createLogoBadge("EL"), BorderLayout.WEST);
+        JLabel logo = new JLabel(createLogoIcon(52));
+        brand.add(logo, BorderLayout.WEST);
 
         JPanel brandText = new JPanel();
         brandText.setOpaque(false);

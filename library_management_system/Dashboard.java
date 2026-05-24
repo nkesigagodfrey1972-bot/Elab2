@@ -59,7 +59,7 @@ public class Dashboard extends JFrame {
         hero.setOpaque(false);
         hero.putClientProperty("ui.theme.keepBackground", Boolean.TRUE);
 
-        JLabel logo = UiTheme.createLogoBadge("EL");
+        JLabel logo = new JLabel(UiTheme.createLogoIcon(72));
         logo.setPreferredSize(new Dimension(72, 72));
         logo.setMaximumSize(new Dimension(72, 72));
         hero.add(logo, BorderLayout.WEST);
@@ -86,17 +86,27 @@ public class Dashboard extends JFrame {
 
         hero.add(heroText, BorderLayout.CENTER);
 
-        JButton refreshButton = createActionButton("Refresh stats", evt -> refreshStats());
+        JButton refreshButton = createActionButton("Refresh stats", "refresh", UiTheme.ACCENT_BLUE, evt -> refreshStats());
         refreshButton.setPreferredSize(new Dimension(160, 40));
         hero.add(refreshButton, BorderLayout.EAST);
 
-        JPanel statsGrid = new JPanel(new GridLayout(2, 2, 16, 16));
+        JPanel statsGrid = new JPanel(new GridLayout(2, 1, 16, 16));
         statsGrid.setOpaque(false);
         statsGrid.putClientProperty("ui.theme.keepBackground", Boolean.TRUE);
-        statsGrid.add(createStatCard("Books in catalog", booksValue, UiTheme.ACCENT_BLUE));
-        statsGrid.add(createStatCard("Registered students", studentsValue, UiTheme.ACCENT));
-        statsGrid.add(createStatCard("Issued items", issuedValue, new Color(62, 106, 214)));
-        statsGrid.add(createStatCard("Available books", availableValue, new Color(245, 162, 59)));
+        JPanel featuredRow = new JPanel(new GridLayout(1, 2, 16, 16));
+        featuredRow.setOpaque(false);
+        featuredRow.putClientProperty("ui.theme.keepBackground", Boolean.TRUE);
+        featuredRow.add(createStatCard("Books in catalog", booksValue, UiTheme.ACCENT_BLUE, true));
+        featuredRow.add(createStatCard("Issued items", issuedValue, UiTheme.ACCENT, true));
+
+        JPanel supportRow = new JPanel(new GridLayout(1, 2, 16, 16));
+        supportRow.setOpaque(false);
+        supportRow.putClientProperty("ui.theme.keepBackground", Boolean.TRUE);
+        supportRow.add(createStatCard("Registered students", studentsValue, new Color(62, 106, 214), false));
+        supportRow.add(createStatCard("Available books", availableValue, new Color(245, 162, 59), false));
+
+        statsGrid.add(featuredRow);
+        statsGrid.add(supportRow);
 
         JPanel actionsPanel = new JPanel(new GridBagLayout());
         actionsPanel.putClientProperty("ui.theme.keepBackground", Boolean.TRUE);
@@ -110,12 +120,12 @@ public class Dashboard extends JFrame {
         actionTitle.setFont(actionTitle.getFont().deriveFont(18f));
         actionTitle.setForeground(UiTheme.TEXT);
 
-        JButton openHome = createActionButton("Open operations center", evt -> openWindow(new HOME()));
-        JButton books = createActionButton("Books", evt -> openWindow(new SEARCH_RECORD()));
-        JButton students = createActionButton("Students", evt -> openWindow(new STUDENT_RECORD()));
-        JButton issues = createActionButton("Issue desk", evt -> openWindow(new ISSUE_RECORD1()));
-        JButton exportBooks = createActionButton("Export books CSV", evt -> exportBooksCsv());
-        JButton exportIssues = createActionButton("Export issue CSV", evt -> exportIssueCsv());
+        JButton openHome = createActionButton("Open operations center", "home", UiTheme.ACCENT_BLUE, evt -> openWindow(new HOME()));
+        JButton books = createActionButton("Books", "book", UiTheme.ACCENT, evt -> openWindow(new SEARCH_RECORD()));
+        JButton students = createActionButton("Students", "users", UiTheme.ACCENT_BLUE, evt -> openWindow(new STUDENT_RECORD()));
+        JButton issues = createActionButton("Issue desk", "issue", new Color(206, 100, 20), evt -> openWindow(new ISSUE_RECORD1()));
+        JButton exportBooks = createActionButton("Export books CSV", "export", UiTheme.ACCENT_BLUE, evt -> exportBooksCsv());
+        JButton exportIssues = createActionButton("Export issue CSV", "export", UiTheme.ACCENT, evt -> exportIssueCsv());
 
         JPanel buttonRow1 = new JPanel(new GridLayout(1, 3, 10, 10));
         buttonRow1.setOpaque(false);
@@ -190,25 +200,38 @@ public class Dashboard extends JFrame {
         return button;
     }
 
-    private JPanel createStatCard(String title, JLabel valueLabel, Color accent) {
-        JPanel card = new JPanel(new BorderLayout(10, 10));
-        card.setBackground(Color.WHITE);
+    private JButton createActionButton(String text, String iconKind, Color iconColor, java.awt.event.ActionListener listener) {
+        JButton button = createActionButton(text, listener);
+        UiTheme.decorateIconButton(button, iconKind, iconColor);
+        return button;
+    }
+
+    private JPanel createStatCard(String title, JLabel valueLabel, Color accent, boolean featured) {
+        JPanel card = new RoundedCard(featured);
         card.putClientProperty("ui.theme.keepBackground", Boolean.TRUE);
-        card.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(214, 224, 236), 1, true),
-            new EmptyBorder(18, 18, 18, 18)
-        ));
+        card.setLayout(new BorderLayout(10, 10));
+        card.setBorder(new EmptyBorder(18, 18, 18, 18));
 
         JLabel titleLabel = new JLabel(title);
-        titleLabel.setForeground(UiTheme.MUTED);
+        titleLabel.setForeground(featured ? new Color(231, 240, 255) : UiTheme.MUTED);
         titleLabel.setFont(titleLabel.getFont().deriveFont(13f));
 
-        valueLabel.setForeground(accent);
+        valueLabel.setForeground(featured ? Color.WHITE : accent);
         valueLabel.setFont(valueLabel.getFont().deriveFont(32f));
+
+        JLabel chip = new JLabel(featured ? "Featured" : "Live");
+        chip.setOpaque(true);
+        chip.putClientProperty("ui.theme.keepBackground", Boolean.TRUE);
+        chip.setForeground(featured ? new Color(255, 255, 255) : UiTheme.ACCENT_DARK);
+        chip.setBackground(featured ? new Color(255, 255, 255, 24) : new Color(255, 237, 214));
+        chip.setBorder(new EmptyBorder(4, 10, 4, 10));
+        chip.setFont(chip.getFont().deriveFont(11f));
 
         JPanel inner = new JPanel();
         inner.setOpaque(false);
         inner.setLayout(new BoxLayout(inner, BoxLayout.Y_AXIS));
+        inner.add(chip);
+        inner.add(Box.createVerticalStrut(12));
         inner.add(titleLabel);
         inner.add(Box.createVerticalStrut(8));
         inner.add(valueLabel);
@@ -275,6 +298,38 @@ public class Dashboard extends JFrame {
             exportCsv("issue records", FirebaseBootstrap.listIssueRecords(), Path.of(System.getProperty("user.home"), "issue-records-export.csv"));
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Export failed: " + ex.getMessage(), "Dashboard", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private static final class RoundedCard extends JPanel {
+
+        private final boolean featured;
+
+        private RoundedCard(boolean featured) {
+            this.featured = featured;
+            setOpaque(false);
+        }
+
+        @Override
+        protected void paintComponent(java.awt.Graphics graphics) {
+            super.paintComponent(graphics);
+            java.awt.Graphics2D graphics2d = (java.awt.Graphics2D) graphics.create();
+            graphics2d.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+            java.awt.Paint paint = featured
+                ? new java.awt.GradientPaint(0, 0, UiTheme.ACCENT_DARK, getWidth(), getHeight(), UiTheme.ACCENT_BLUE)
+                : Color.WHITE;
+            graphics2d.setPaint(paint);
+            graphics2d.fillRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 28, 28);
+            if (featured) {
+                graphics2d.setColor(new Color(255, 255, 255, 36));
+                graphics2d.fillOval(getWidth() - 70, -8, 100, 100);
+                graphics2d.setColor(new Color(255, 255, 255, 18));
+                graphics2d.fillOval(-28, getHeight() - 62, 120, 120);
+            } else {
+                graphics2d.setColor(new Color(214, 224, 236));
+                graphics2d.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 28, 28);
+            }
+            graphics2d.dispose();
         }
     }
 

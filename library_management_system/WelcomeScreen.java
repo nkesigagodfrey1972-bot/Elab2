@@ -49,7 +49,7 @@ public final class WelcomeScreen extends JFrame {
         leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.Y_AXIS));
         leftPanel.setBorder(new EmptyBorder(42, 42, 42, 42));
 
-        JLabel badge = UiTheme.createLogoBadge("EL");
+        JLabel badge = new JLabel(UiTheme.createLogoIcon(92));
         badge.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JLabel brand = new JLabel("ELAB LIBRARY");

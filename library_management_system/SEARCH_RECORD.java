@@ -80,9 +80,9 @@ public class SEARCH_RECORD extends JFrame {
 
             bookId.setText(book.getOrDefault("bookId", ""));
             bookName.setText(book.getOrDefault("bookName", ""));
-            authorName.setText(book.getOrDefault("authorName", ""));
-            publisherName.setText(book.getOrDefault("publisherName", ""));
-            quantity.setText(book.getOrDefault("quantity", ""));
+            authorName.setText(book.getOrDefault("author", ""));
+            publisherName.setText(book.getOrDefault("category", ""));
+            quantity.setText(book.getOrDefault("price", ""));
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Search failed: " + ex.getMessage());
         }

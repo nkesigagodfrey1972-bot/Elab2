@@ -173,6 +173,7 @@ public final class FirebaseBootstrap {
     }
 
     public static void saveBook(String bookId, String bookName, String author, String category, String price) throws Exception {
+        requireNonBlank(bookId, "Book ID");
         upsertFirestoreDocument("books", bookId, mapOf(
             "bookId", bookId,
             "bookName", bookName,
@@ -201,6 +202,7 @@ public final class FirebaseBootstrap {
     }
 
     public static void saveStudent(String registrationNo, String studentName, String mobileNo, String branch) throws Exception {
+        requireNonBlank(registrationNo, "Registration No");
         upsertFirestoreDocument("students", registrationNo, mapOf(
             "registrationNo", registrationNo,
             "studentName", studentName,
@@ -248,6 +250,8 @@ public final class FirebaseBootstrap {
     }
 
     public static void saveIssueRecord(String bookId, String bookName, String author, String category, String price, String registrationNo, String studentName, String issueDate, String issued) throws Exception {
+        requireNonBlank(bookId, "Book ID");
+        requireNonBlank(registrationNo, "Registration No");
         upsertFirestoreDocument("issue_records", issueDocumentId(bookId, registrationNo), mapOf(
             "bookId", bookId,
             "bookName", bookName,
@@ -263,6 +267,8 @@ public final class FirebaseBootstrap {
     }
 
     public static void updateIssueRecordReturn(String bookId, String registrationNo, String returnDate, String issued) throws Exception {
+        requireNonBlank(bookId, "Book ID");
+        requireNonBlank(registrationNo, "Registration No");
         Map<String, String> current = getIssueRecord(bookId, registrationNo);
         if (current == null) {
             throw new IllegalStateException("Issue record not found");
@@ -280,6 +286,12 @@ public final class FirebaseBootstrap {
             "returnDate", returnDate,
             "issued", issued
         ));
+    }
+
+    public static void deleteIssueRecord(String bookId, String registrationNo) throws Exception {
+        requireNonBlank(bookId, "Book ID");
+        requireNonBlank(registrationNo, "Registration No");
+        deleteDocument("issue_records", issueDocumentId(bookId, registrationNo));
     }
 
     private static ServiceAccount loadServiceAccount() throws Exception {
@@ -591,7 +603,15 @@ public final class FirebaseBootstrap {
     }
 
     private static String issueDocumentId(String bookId, String registrationNo) {
+        requireNonBlank(bookId, "Book ID");
+        requireNonBlank(registrationNo, "Registration No");
         return bookId + "_" + registrationNo;
+    }
+
+    private static void requireNonBlank(String value, String label) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException(label + " is required.");
+        }
     }
 
     private static Map<String, String> mapOf(String... pairs) {
@@ -603,6 +623,7 @@ public final class FirebaseBootstrap {
     }
 
     private static void upsertFirestoreDocument(String collection, String documentId, Map<String, String> fields) throws Exception {
+        requireNonBlank(documentId, "Document ID");
         ServiceAccount serviceAccount = loadServiceAccount();
         if (serviceAccount == null) {
             throw new IllegalStateException("FIREBASE_SERVICE_ACCOUNT is not configured.");
