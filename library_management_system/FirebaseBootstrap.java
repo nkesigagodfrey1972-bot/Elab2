@@ -40,7 +40,13 @@ public final class FirebaseBootstrap {
 
             seedCollection(serviceAccount.projectId, accessToken, "employees", "seed-admin", documentFields(new Object[][]{
                 {"employeeName", "admin"},
+                {"username", "admin"},
+                {"fullName", "System Administrator"},
+                {"email", ""},
+                {"phoneNumber", ""},
+                {"department", "Administration"},
                 {"passwordHash", hashPassword("admin123")},
+                {"role", "Admin"},
                 {"seededAt", timestamp}
             }));
 
@@ -139,20 +145,20 @@ public final class FirebaseBootstrap {
     }
 
     public static void createOrUpdateEmployee(String username, String password) throws Exception {
-        ServiceAccount serviceAccount = loadServiceAccount();
-        if (serviceAccount == null) {
-            throw new IllegalStateException("FIREBASE_SERVICE_ACCOUNT is not configured.");
+        createOrUpdateEmployee(username, password, "Librarian");
+    }
+
+    public static Map<String, String> getEmployee(String username) throws Exception {
+        Map<String, String> fields = getDocumentFields("employees", username);
+        if (fields == null) {
+            return null;
         }
+        fields.put("username", username);
+        return fields;
+    }
 
-        String accessToken = fetchAccessToken(serviceAccount.clientEmail, serviceAccount.privateKeyPem);
-        String timestamp = Instant.now().toString();
-        String fieldsJson = documentFields(new Object[][]{
-            {"employeeName", username},
-            {"passwordHash", hashPassword(password)},
-            {"seededAt", timestamp}
-        });
-
-        upsertDocument(serviceAccount.projectId, accessToken, "employees", username, fieldsJson);
+    public static boolean employeeExists(String username) throws Exception {
+        return getEmployee(username) != null;
     }
 
     public static Map<String, String> getBook(String bookId) throws Exception {
@@ -510,7 +516,7 @@ public final class FirebaseBootstrap {
             }
         }
 
-        for (String field : new String[]{"bookId", "bookName", "author", "category", "price", "issued", "registrationNo", "studentName", "mobileNo", "branch", "issueDate", "returnDate", "seededAt", "employeeName", "passwordHash"}) {
+        for (String field : new String[]{"bookId", "bookName", "author", "category", "price", "issued", "registrationNo", "studentName", "mobileNo", "branch", "issueDate", "returnDate", "seededAt", "employeeName", "username", "fullName", "email", "phoneNumber", "department", "passwordHash", "role", "createdAt", "updatedAt"}) {
             String value = extractFieldValue(documentJson, field);
             if (value != null) {
                 fields.put(field, value);
@@ -926,6 +932,310 @@ public final class FirebaseBootstrap {
 
     private static String urlEncode(String value) {
         return java.net.URLEncoder.encode(value, StandardCharsets.UTF_8);
+    }
+
+    // ── Employee role support ─────────────────────────────────────────────────
+
+    /** Returns the role stored for an employee, defaulting to "Viewer" if absent. */
+    public static String getEmployeeRole(String username) throws Exception {
+        Map<String, String> fields = getEmployee(username);
+        if (fields == null) return "Viewer";
+        return fields.getOrDefault("role", "Viewer");
+    }
+
+    /** Creates/updates an employee with a role field. */
+    public static void createOrUpdateEmployee(String username, String password, String role) throws Exception {
+        createOrUpdateEmployee(username, password, role, "", "", "", "");
+    }
+
+    /** Creates/updates an employee with role and profile fields. */
+    public static void createOrUpdateEmployee(String username, String password, String role,
+                                              String fullName, String email, String phoneNumber,
+                                              String department) throws Exception {
+        ServiceAccount sa = loadServiceAccount();
+        if (sa == null) throw new IllegalStateException("FIREBASE_SERVICE_ACCOUNT is not configured.");
+        if ("Admin".equalsIgnoreCase(role)) {
+            throw new IllegalArgumentException("Admin role cannot be assigned from signup. Set it directly in Firebase.");
+        }
+        String token = fetchAccessToken(sa.clientEmail, sa.privateKeyPem);
+        String now = Instant.now().toString();
+        Map<String, String> existing = getEmployee(username);
+        String createdAt = existing != null
+            ? existing.getOrDefault("createdAt", existing.getOrDefault("seededAt", now))
+            : now;
+        upsertDocument(sa.projectId, token, "employees", username, documentFields(new Object[][]{
+            {"employeeName", username},
+            {"username", username},
+            {"fullName", fullName == null ? "" : fullName},
+            {"email", email == null ? "" : email},
+            {"phoneNumber", phoneNumber == null ? "" : phoneNumber},
+            {"department", department == null ? "" : department},
+            {"passwordHash", hashPassword(password)},
+            {"role", role == null ? "Viewer" : role},
+            {"createdAt", createdAt},
+            {"updatedAt", now}
+        }));
+    }
+
+    // ── Generic collection helpers (public) ───────────────────────────────────
+
+    /** Upsert any document in any collection with a string field map. */
+    public static void upsertDocumentMap(String collection, String documentId, Map<String, String> fields) throws Exception {
+        upsertFirestoreDocument(collection, documentId, fields);
+    }
+
+    /** Delete any document from any collection. */
+    public static void removeDocument(String collection, String documentId) throws Exception {
+        deleteDocument(collection, documentId);
+    }
+
+    /** List all documents in any collection. */
+    public static List<Map<String, String>> listCollection(String collection) throws Exception {
+        return listCollectionDocuments(collection);
+    }
+
+    // ── Audit logs ────────────────────────────────────────────────────────────
+
+    public static void saveAuditLog(Map<String, String> fields) throws Exception {
+        requireNonBlank(fields.getOrDefault("logId", ""), "logId");
+        upsertFirestoreDocument("auditLogs", fields.get("logId"), fields);
+    }
+
+    public static List<Map<String, String>> listAuditLogs() throws Exception {
+        return listCollectionDocuments("auditLogs");
+    }
+
+    // ── Fines ─────────────────────────────────────────────────────────────────
+
+    public static void saveFine(Map<String, String> fields) throws Exception {
+        requireNonBlank(fields.getOrDefault("fineId", ""), "fineId");
+        upsertFirestoreDocument("fines", fields.get("fineId"), fields);
+    }
+
+    public static List<Map<String, String>> listFines() throws Exception {
+        return listCollectionDocuments("fines");
+    }
+
+    public static Map<String, String> getFine(String fineId) throws Exception {
+        return getDocumentFields("fines", fineId);
+    }
+
+    public static void deleteFine(String fineId) throws Exception {
+        deleteDocument("fines", fineId);
+    }
+
+    /** Returns all pending fines for a member. */
+    public static List<Map<String, String>> getPendingFinesForMember(String registrationNo) throws Exception {
+        return filterDocs("fines", f ->
+            equalsIgnoreCase(f.get("memberId"), registrationNo) &&
+            equalsIgnoreCase(f.get("status"), "Pending"));
+    }
+
+    /** Sum of pending fine amounts for a member. */
+    public static double getPendingFineTotal(String registrationNo) throws Exception {
+        double total = 0;
+        for (Map<String, String> f : getPendingFinesForMember(registrationNo)) {
+            try { total += Double.parseDouble(f.getOrDefault("amount", "0")); }
+            catch (NumberFormatException ignored) {}
+        }
+        return total;
+    }
+
+    // ── Reservations ──────────────────────────────────────────────────────────
+
+    public static void saveReservation(Map<String, String> fields) throws Exception {
+        requireNonBlank(fields.getOrDefault("reservationId", ""), "reservationId");
+        upsertFirestoreDocument("reservations", fields.get("reservationId"), fields);
+    }
+
+    public static List<Map<String, String>> listReservations() throws Exception {
+        return listCollectionDocuments("reservations");
+    }
+
+    public static Map<String, String> getReservation(String reservationId) throws Exception {
+        return getDocumentFields("reservations", reservationId);
+    }
+
+    public static void deleteReservation(String reservationId) throws Exception {
+        deleteDocument("reservations", reservationId);
+    }
+
+    public static List<Map<String, String>> getPendingReservationsForBook(String bookId) throws Exception {
+        return filterDocs("reservations", r ->
+            equalsIgnoreCase(r.get("bookId"), bookId) &&
+            equalsIgnoreCase(r.get("status"), "Pending"));
+    }
+
+    public static List<Map<String, String>> getActiveReservationsForMember(String memberId) throws Exception {
+        return filterDocs("reservations", r ->
+            equalsIgnoreCase(r.get("memberId"), memberId) &&
+            (equalsIgnoreCase(r.get("status"), "Pending")));
+    }
+
+    public static int countPendingReservations() throws Exception {
+        int count = 0;
+        for (Map<String, String> r : listReservations()) {
+            if ("Pending".equalsIgnoreCase(r.getOrDefault("status", ""))) count++;
+        }
+        return count;
+    }
+
+    // ── Book copies ───────────────────────────────────────────────────────────
+
+    public static void saveBookCopy(Map<String, String> fields) throws Exception {
+        requireNonBlank(fields.getOrDefault("copyId", ""), "copyId");
+        upsertFirestoreDocument("bookCopies", fields.get("copyId"), fields);
+    }
+
+    public static List<Map<String, String>> listBookCopies() throws Exception {
+        return listCollectionDocuments("bookCopies");
+    }
+
+    public static List<Map<String, String>> getCopiesForBook(String bookId) throws Exception {
+        return filterDocs("bookCopies", c -> equalsIgnoreCase(c.get("bookId"), bookId));
+    }
+
+    public static Map<String, String> getBookCopy(String copyId) throws Exception {
+        return getDocumentFields("bookCopies", copyId);
+    }
+
+    public static void deleteBookCopy(String copyId) throws Exception {
+        deleteDocument("bookCopies", copyId);
+    }
+
+    public static Map<String, String> getBookCopyByBarcode(String barcode) throws Exception {
+        List<Map<String, String>> matches = filterDocs("bookCopies",
+            c -> equalsIgnoreCase(c.get("barcode"), barcode));
+        return matches.isEmpty() ? null : matches.get(0);
+    }
+
+    /** Count available copies for a book. */
+    public static int countAvailableCopies(String bookId) throws Exception {
+        int count = 0;
+        for (Map<String, String> c : getCopiesForBook(bookId)) {
+            if ("Available".equalsIgnoreCase(c.getOrDefault("status", ""))) count++;
+        }
+        return count;
+    }
+
+    // ── Issue record with renewal support ─────────────────────────────────────
+
+    /** Save issue record with renewal fields. */
+    public static void saveIssueRecordFull(Map<String, String> fields) throws Exception {
+        requireNonBlank(fields.getOrDefault("bookId", ""), "Book ID");
+        requireNonBlank(fields.getOrDefault("registrationNo", ""), "Registration No");
+        String docId = fields.get("bookId") + "_" + fields.get("registrationNo");
+        upsertFirestoreDocument("issue_records", docId, fields);
+        setBookIssuedStatus(fields.get("bookId"), true);
+    }
+
+    /** Renew an issue record: extend dueDate, increment renewalCount. */
+    public static void renewIssueRecord(String bookId, String registrationNo,
+                                        String newDueDate, String renewedBy) throws Exception {
+        Map<String, String> rec = getIssueRecord(bookId, registrationNo);
+        if (rec == null) throw new IllegalStateException("Issue record not found.");
+        if (!"yes".equalsIgnoreCase(rec.getOrDefault("issued", "")))
+            throw new IllegalStateException("This book has already been returned.");
+
+        int count = 0;
+        try { count = Integer.parseInt(rec.getOrDefault("renewalCount", "0")); }
+        catch (NumberFormatException ignored) {}
+
+        int limit = AppSettings.renewalLimit();
+        if (count >= limit)
+            throw new IllegalStateException("Renewal limit (" + limit + ") reached.");
+
+        rec.put("dueDate",      newDueDate);
+        rec.put("renewalCount", String.valueOf(count + 1));
+        rec.put("renewedAt",    Instant.now().toString());
+        rec.put("renewedBy",    renewedBy == null ? "" : renewedBy);
+        upsertFirestoreDocument("issue_records", bookId + "_" + registrationNo, rec);
+    }
+
+    // ── Firestore settings collection ─────────────────────────────────────────
+
+    public static void saveFirestoreSettings(Map<String, String> fields) throws Exception {
+        upsertFirestoreDocument("settings", "app", fields);
+    }
+
+    public static Map<String, String> getFirestoreSettings() throws Exception {
+        return getDocumentFields("settings", "app");
+    }
+
+    // ── parseDocumentFields extension (handles new field names) ──────────────
+
+    // The existing parseDocumentFields only handles a fixed list of field names.
+    // This method parses ALL string/integer/double/boolean fields from a document.
+    public static Map<String, String> parseAllFields(String documentJson) {
+        Map<String, String> fields = new HashMap<>();
+        // Extract document ID from name field
+        String name = extractStringField(documentJson, "name");
+        if (name != null) {
+            int lastSlash = name.lastIndexOf('/');
+            if (lastSlash >= 0 && lastSlash < name.length() - 1) {
+                fields.put("_id", name.substring(lastSlash + 1));
+            }
+        }
+        // Find "fields" object
+        int fieldsMarker = documentJson.indexOf("\"fields\"");
+        if (fieldsMarker < 0) return fields;
+        int fieldsStart = documentJson.indexOf('{', fieldsMarker);
+        if (fieldsStart < 0) return fields;
+        int fieldsEnd = findMatchingBrace(documentJson, fieldsStart);
+        if (fieldsEnd < 0) return fields;
+        String fieldsJson = documentJson.substring(fieldsStart + 1, fieldsEnd);
+
+        // Iterate over key-value pairs
+        int idx = 0;
+        while (idx < fieldsJson.length()) {
+            // Find next quoted key
+            int keyStart = fieldsJson.indexOf('"', idx);
+            if (keyStart < 0) break;
+            String key = readJsonString(fieldsJson, keyStart + 1);
+            int afterKey = fieldsJson.indexOf('"', keyStart) + 1 + key.length() + 1; // skip closing quote
+            // Find the value object
+            int objStart = fieldsJson.indexOf('{', afterKey);
+            if (objStart < 0) break;
+            int objEnd = findMatchingBrace(fieldsJson, objStart);
+            if (objEnd < 0) break;
+            String valueObj = fieldsJson.substring(objStart, objEnd + 1);
+            String value = extractFirestoreValue(valueObj);
+            if (value != null) fields.put(key, value);
+            idx = objEnd + 1;
+        }
+        return fields;
+    }
+
+    // ── List collection with full field parsing ───────────────────────────────
+
+    public static List<Map<String, String>> listCollectionFull(String collection) throws Exception {
+        ServiceAccount sa = loadServiceAccount();
+        if (sa == null) throw new IllegalStateException("FIREBASE_SERVICE_ACCOUNT is not configured.");
+        String token = fetchAccessToken(sa.clientEmail, sa.privateKeyPem);
+        String url = "https://firestore.googleapis.com/v1/projects/" + sa.projectId +
+            "/databases/(default)/documents/" + collection + "?pageSize=1000";
+        HttpRequest req = HttpRequest.newBuilder(URI.create(url))
+            .header("Authorization", "Bearer " + token).GET().build();
+        HttpResponse<String> resp = HTTP.send(req, HttpResponse.BodyHandlers.ofString());
+        if (resp.statusCode() / 100 != 2) return new ArrayList<>();
+
+        List<Map<String, String>> docs = new ArrayList<>();
+        String json = resp.body();
+        int markerIndex = json.indexOf("\"documents\"");
+        if (markerIndex < 0) return docs;
+        int arrayStart = json.indexOf('[', markerIndex);
+        if (arrayStart < 0) return docs;
+        int index = arrayStart + 1;
+        while (index < json.length()) {
+            while (index < json.length() && Character.isWhitespace(json.charAt(index))) index++;
+            if (index >= json.length() || json.charAt(index) == ']') break;
+            if (json.charAt(index) != '{') { index++; continue; }
+            int end = findMatchingBrace(json, index);
+            if (end < 0) break;
+            docs.add(parseAllFields(json.substring(index, end + 1)));
+            index = end + 1;
+        }
+        return docs;
     }
 
     private static final class ServiceAccount {

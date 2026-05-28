@@ -1,17 +1,14 @@
 package library_management_system;
 
 import java.awt.GraphicsEnvironment;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Properties;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.UIManager;
 
 public final class AppLauncher {
 
-    private static final Path SETTINGS_FILE = Path.of(System.getProperty("user.home"), ".elab-library.properties");
     private static final String SERVICE_ACCOUNT_KEY = "firebase.serviceAccount";
 
     private AppLauncher() {
@@ -51,8 +48,7 @@ public final class AppLauncher {
             return;
         }
 
-        Properties properties = loadSettings();
-        configuredPath = properties.getProperty(SERVICE_ACCOUNT_KEY);
+        configuredPath = AppSettings.get(SERVICE_ACCOUNT_KEY, "");
         if (configuredPath != null && !configuredPath.isBlank() && Files.exists(Path.of(configuredPath))) {
             System.setProperty(SERVICE_ACCOUNT_KEY, configuredPath);
             return;
@@ -61,16 +57,14 @@ public final class AppLauncher {
         Path localKey = Path.of("library_management_system", "e-library-service-account.json");
         if (Files.exists(localKey)) {
             System.setProperty(SERVICE_ACCOUNT_KEY, localKey.toString());
-            properties.setProperty(SERVICE_ACCOUNT_KEY, localKey.toString());
-            saveSettings(properties);
+            saveSetting(localKey.toString());
             return;
         }
 
         Path rootKey = Path.of("e-library-service-account.json");
         if (Files.exists(rootKey)) {
             System.setProperty(SERVICE_ACCOUNT_KEY, rootKey.toString());
-            properties.setProperty(SERVICE_ACCOUNT_KEY, rootKey.toString());
-            saveSettings(properties);
+            saveSetting(rootKey.toString());
             return;
         }
 
@@ -87,29 +81,12 @@ public final class AppLauncher {
 
         String selectedPath = chooser.getSelectedFile().getAbsolutePath();
         System.setProperty(SERVICE_ACCOUNT_KEY, selectedPath);
-        properties.setProperty(SERVICE_ACCOUNT_KEY, selectedPath);
-        saveSettings(properties);
+        saveSetting(selectedPath);
     }
 
-    private static Properties loadSettings() {
-        Properties properties = new Properties();
-        if (Files.exists(SETTINGS_FILE)) {
-            try (var input = Files.newInputStream(SETTINGS_FILE)) {
-                properties.load(input);
-            } catch (IOException ignored) {
-                // Start with empty settings if the file cannot be read.
-            }
-        }
-        return properties;
-    }
-
-    private static void saveSettings(Properties properties) {
-        try {
-            try (var output = Files.newOutputStream(SETTINGS_FILE)) {
-                properties.store(output, "Elab Library System settings");
-            }
-        } catch (IOException ignored) {
-            // Best effort only; startup still continues.
-        }
+    private static void saveSetting(String serviceAccountPath) {
+        var properties = AppSettings.load();
+        properties.setProperty(SERVICE_ACCOUNT_KEY, serviceAccountPath);
+        AppSettings.save(properties);
     }
 }

@@ -39,6 +39,7 @@ public final class WelcomeScreen extends JFrame {
     private void initComponents() {
         setTitle("Elab Library Management System");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        UiTheme.applyWindowIcon(this);
         setUndecorated(true);
         setResizable(false);
 
@@ -57,7 +58,7 @@ public final class WelcomeScreen extends JFrame {
         brand.setAlignmentX(Component.LEFT_ALIGNMENT);
         brand.setFont(brand.getFont().deriveFont(32f));
 
-        JLabel subtitle = new JLabel("Management System");
+        JLabel subtitle = new JLabel("Smart Digital Library Management");
         subtitle.setForeground(new Color(227, 255, 236));
         subtitle.setAlignmentX(Component.LEFT_ALIGNMENT);
         subtitle.setFont(subtitle.getFont().deriveFont(20f));
@@ -123,9 +124,14 @@ public final class WelcomeScreen extends JFrame {
         rightPanel.add(new JLabel("Preparing your workspace...", SwingConstants.LEFT));
         rightPanel.add(Box.createVerticalGlue());
 
+        JLabel footerLabel = new JLabel("Kampala International University · Elab Library System v2.0");
+        footerLabel.setFont(footerLabel.getFont().deriveFont(11f));
+        footerLabel.setForeground(new Color(130, 150, 140));
+        footerLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        rightPanel.add(footerLabel);
+
         root.add(leftPanel, BorderLayout.CENTER);
         root.add(rightPanel, BorderLayout.EAST);
-        setContentPane(root);
 
         pack();
         setSize(880, 460);
