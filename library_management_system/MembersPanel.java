@@ -91,7 +91,8 @@ public class MembersPanel extends JPanel {
         JPanel formCard = UiTheme.makeCard();
         formCard.setLayout(new BorderLayout(0, 12));
         formCard.setPreferredSize(new Dimension(320, 0));
-        formCard.add(UiTheme.makeSectionTitle("Member Details"), BorderLayout.NORTH);
+        JLabel formTitle = UiTheme.makeSectionTitle("Member Details");
+        formCard.add(formTitle, BorderLayout.NORTH);
 
         JPanel fields = new JPanel(new GridBagLayout());
         fields.setOpaque(false);
@@ -131,6 +132,13 @@ public class MembersPanel extends JPanel {
         deleteBtn.addActionListener(e -> deleteMember());
         clearBtn.addActionListener(e  -> clearForm());
         historyBtn.addActionListener(e -> viewHistory());
+
+        if (!UserSession.canManageMembers()) {
+            formTitle.setText("Member Details (Read Only)");
+            addBtn.setEnabled(false);
+            updateBtn.setEnabled(false);
+            deleteBtn.setEnabled(false);
+        }
 
         bg.gridy = 0; btnPanel.add(addBtn,     bg);
         bg.gridy = 1; btnPanel.add(updateBtn,  bg);

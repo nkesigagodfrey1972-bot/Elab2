@@ -18,13 +18,13 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.io.InputStream;
 
 public final class FirebaseBootstrap {
 
     private static final HttpClient HTTP = HttpClient.newHttpClient();
     private static final String SCOPE = "https://www.googleapis.com/auth/datastore https://www.googleapis.com/auth/cloud-platform";
-    private static final String BUNDLED_SERVICE_ACCOUNT_RESOURCE = "/library_management_system/e-library-service-account.json";
+    private static final Path PROJECT_SERVICE_ACCOUNT = Path.of("library_management_system", "e-library.json");
+    private static final Path ROOT_SERVICE_ACCOUNT = Path.of("e-library.json");
 
     private FirebaseBootstrap() {
     }
@@ -355,35 +355,32 @@ public final class FirebaseBootstrap {
         }
 
         if (credentialsPath == null || credentialsPath.isBlank()) {
-            Path projectLocalKey = Path.of("library_management_system", "e-library-service-account.json");
-            if (Files.exists(projectLocalKey)) {
-                credentialsPath = projectLocalKey.toString();
+            Path localCredential = findLocalServiceAccount();
+            if (localCredential != null) {
+                credentialsPath = localCredential.toAbsolutePath().toString();
             }
         }
 
         if (credentialsPath == null || credentialsPath.isBlank()) {
-            Path rootLocalKey = Path.of("e-library-service-account.json");
-            if (Files.exists(rootLocalKey)) {
-                credentialsPath = rootLocalKey.toString();
-            }
+            return null;
         }
 
-        String serviceAccountJson = null;
-        if (credentialsPath != null && !credentialsPath.isBlank()) {
-            serviceAccountJson = Files.readString(Path.of(credentialsPath));
-        } else {
-            try (InputStream bundledCredentials = FirebaseBootstrap.class.getResourceAsStream(BUNDLED_SERVICE_ACCOUNT_RESOURCE)) {
-                if (bundledCredentials == null) {
-                    return null;
-                }
-                serviceAccountJson = new String(bundledCredentials.readAllBytes(), StandardCharsets.UTF_8);
-            }
-        }
+        String serviceAccountJson = Files.readString(Path.of(credentialsPath));
         return new ServiceAccount(
             extractJsonString(serviceAccountJson, "project_id"),
             extractJsonString(serviceAccountJson, "client_email"),
             extractJsonString(serviceAccountJson, "private_key")
         );
+    }
+
+    private static Path findLocalServiceAccount() {
+        if (Files.exists(PROJECT_SERVICE_ACCOUNT)) {
+            return PROJECT_SERVICE_ACCOUNT;
+        }
+        if (Files.exists(ROOT_SERVICE_ACCOUNT)) {
+            return ROOT_SERVICE_ACCOUNT;
+        }
+        return null;
     }
 
     private static Map<String, String> getDocumentFields(String collection, String documentId) throws Exception {

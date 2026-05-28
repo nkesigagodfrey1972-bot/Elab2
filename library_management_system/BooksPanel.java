@@ -173,9 +173,11 @@ public class BooksPanel extends JPanel {
         copiesBtn.addActionListener(e -> manageCopies());
 
         if (!UserSession.canManageBooks()) {
+            formTitle.setText("Book Details (Read Only)");
             addBtn.setEnabled(false);
             updateBtn.setEnabled(false);
             deleteBtn.setEnabled(false);
+            copiesBtn.setEnabled(false);
         }
 
         bg.gridy = 0; btnPanel.add(addBtn,    bg);

@@ -53,6 +53,7 @@ public class ReservationsPanel extends JPanel {
     private final JTextField searchField    = UiTheme.makeFormField("Search book, member…");
     private final JComboBox<String> statusFilter = new JComboBox<>(new String[]{"All", "Pending", "Fulfilled", "Cancelled", "Expired"});
     private final JLabel statusBar = new JLabel("Ready");
+    private final JLabel reservationHint = infoLabel("");
 
     public ReservationsPanel() {
         setLayout(new BorderLayout());
@@ -118,41 +119,51 @@ public class ReservationsPanel extends JPanel {
         gbc.insets = new Insets(4, 6, 4, 6);
         gbc.gridx = 0; gbc.weightx = 1;
 
-        JLabel formTitle = UiTheme.makeSectionTitle("New Reservation");
+        JLabel formTitle = UiTheme.makeSectionTitle(UserSession.canManageReservations()
+            ? "Reservation Workspace" : "Book a Reservation");
         gbc.gridy = 0; gbc.gridwidth = 2;
         formCard.add(formTitle, gbc);
         gbc.gridwidth = 1;
 
-        gbc.gridy = 1; gbc.weightx = 0;
+        reservationHint.setText(UserSession.canManageReservations()
+            ? "Create, review, and fulfill incoming bookings."
+            : "Place a booking request and library staff will review it.");
+        reservationHint.setForeground(UiTheme.MUTED);
+        gbc.gridy = 1; gbc.gridx = 0; gbc.gridwidth = 2;
+        gbc.insets = new Insets(0, 6, 10, 6);
+        formCard.add(reservationHint, gbc);
+        gbc.gridwidth = 1;
+
+        gbc.gridy = 2; gbc.gridx = 0; gbc.weightx = 0; gbc.insets = new Insets(4, 6, 4, 6);
         formCard.add(UiTheme.makeFormLabel("Book ID *"), gbc);
         gbc.gridx = 1; gbc.weightx = 1;
         formCard.add(fldBookId, gbc);
 
-        gbc.gridx = 0; gbc.gridy = 2; gbc.weightx = 0;
+        gbc.gridx = 0; gbc.gridy = 3; gbc.weightx = 0;
         formCard.add(UiTheme.makeFormLabel("Book Title:"), gbc);
         gbc.gridx = 1; gbc.weightx = 1;
         formCard.add(lblBookTitle, gbc);
 
-        gbc.gridx = 0; gbc.gridy = 3; gbc.weightx = 0;
+        gbc.gridx = 0; gbc.gridy = 4; gbc.weightx = 0;
         formCard.add(UiTheme.makeFormLabel("Member Reg No *"), gbc);
         gbc.gridx = 1; gbc.weightx = 1;
         formCard.add(fldMemberId, gbc);
 
-        gbc.gridx = 0; gbc.gridy = 4; gbc.weightx = 0;
+        gbc.gridx = 0; gbc.gridy = 5; gbc.weightx = 0;
         formCard.add(UiTheme.makeFormLabel("Member Name:"), gbc);
         gbc.gridx = 1; gbc.weightx = 1;
         formCard.add(lblMemberName, gbc);
 
-        gbc.gridx = 0; gbc.gridy = 5; gbc.gridwidth = 2; gbc.insets = new Insets(10, 6, 4, 6);
+        gbc.gridx = 0; gbc.gridy = 6; gbc.gridwidth = 2; gbc.insets = new Insets(10, 6, 4, 6);
         JPanel formBtns = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         formBtns.setOpaque(false);
         JButton lookupBtn  = UiTheme.makePrimaryButton("Look Up");
-        JButton reserveBtn = UiTheme.makeSuccessButton("Reserve");
+        JButton reserveBtn = UiTheme.makeSuccessButton(UserSession.canManageReservations() ? "Reserve" : "Place Booking");
         JButton clearBtn   = UiTheme.makeSecondaryButton("Clear");
         lookupBtn.addActionListener(e  -> lookupBookAndMember());
         reserveBtn.addActionListener(e -> createReservation());
         clearBtn.addActionListener(e   -> clearForm());
-        if (!UserSession.canManageReservations()) reserveBtn.setEnabled(false);
+        if (!UserSession.canCreateReservations()) reserveBtn.setEnabled(false);
         formBtns.add(lookupBtn);
         formBtns.add(reserveBtn);
         formBtns.add(clearBtn);
@@ -299,7 +310,7 @@ public class ReservationsPanel extends JPanel {
     }
 
     private void createReservation() {
-        if (!UserSession.canManageReservations()) {
+        if (!UserSession.canCreateReservations()) {
             UiTheme.showWarning(this, "Access denied."); return;
         }
         String bookId   = fldBookId.getText().trim();
@@ -346,7 +357,15 @@ public class ReservationsPanel extends JPanel {
                 return null;
             }
             @Override protected void done() {
-                try { get(); UiTheme.showSuccess(ReservationsPanel.this, "Reservation created."); clearForm(); loadData(); }
+                try {
+                    get();
+                    String message = UserSession.canManageReservations()
+                        ? "Reservation created."
+                        : "Booking placed successfully. A librarian will review it.";
+                    UiTheme.showSuccess(ReservationsPanel.this, message);
+                    clearForm();
+                    loadData();
+                }
                 catch (Exception ex) { UiTheme.showError(ReservationsPanel.this, ex.getMessage()); statusBar.setText("Error."); }
             }
         }.execute();

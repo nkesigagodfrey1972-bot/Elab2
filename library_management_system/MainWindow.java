@@ -12,14 +12,18 @@ import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Map;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
+import javax.swing.SwingWorker;
 import javax.swing.Timer;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.MatteBorder;
@@ -64,6 +68,7 @@ public class MainWindow extends JFrame {
         this.username = username;
         initComponents();
         startClock();
+        notifyReservationBookingsOnLogin();
     }
 
     private void initComponents() {
@@ -195,6 +200,9 @@ public class MainWindow extends JFrame {
         if (UserSession.canIssueReturn()) {
             sidebar.add(btnIssue);
             sidebar.add(btnReturn);
+        }
+
+        if (UserSession.canCreateReservations()) {
             sidebar.add(btnReservations);
         }
 
@@ -283,7 +291,7 @@ public class MainWindow extends JFrame {
             case PANEL_DASHBOARD, PANEL_BOOKS, PANEL_MEMBERS,
                  PANEL_REPORTS, PANEL_ABOUT -> true;
             case PANEL_ISSUE, PANEL_RETURN,
-                 PANEL_RESERVATIONS         -> UserSession.canIssueReturn();
+                 PANEL_RESERVATIONS         -> UserSession.canCreateReservations();
             case PANEL_TRANSACTIONS,
                  PANEL_FINES               -> UserSession.canManageBooks();
             case PANEL_AUDIT               -> UserSession.canViewAuditLogs();
@@ -321,6 +329,57 @@ public class MainWindow extends JFrame {
             new LOGIN_FORM().setVisible(true);
             dispose();
         }
+    }
+
+    private void notifyReservationBookingsOnLogin() {
+        if (!UserSession.canReceiveReservationNotifications()) {
+            return;
+        }
+        new SwingWorker<String, Void>() {
+            @Override
+            protected String doInBackground() throws Exception {
+                List<Map<String, String>> reservations = FirebaseBootstrap.listReservations();
+                int pending = 0;
+                int newToday = 0;
+                String today = java.time.LocalDate.now().toString();
+                for (Map<String, String> reservation : reservations) {
+                    String status = reservation.getOrDefault("status", "");
+                    if (!"Pending".equalsIgnoreCase(status)) {
+                        continue;
+                    }
+                    pending++;
+                    String reservedOn = reservation.getOrDefault("reservationDate", "");
+                    if (today.equals(reservedOn)) {
+                        newToday++;
+                    }
+                }
+                if (pending == 0) {
+                    return null;
+                }
+                if (newToday > 0) {
+                    return newToday + " new booking(s) came in today.\n" +
+                        pending + " pending booking(s) need librarian attention.";
+                }
+                return pending + " pending booking(s) need librarian attention.";
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    String message = get();
+                    if (message != null && !message.isBlank()) {
+                        JOptionPane.showMessageDialog(
+                            MainWindow.this,
+                            message,
+                            "Reservation Notifications",
+                            JOptionPane.INFORMATION_MESSAGE
+                        );
+                    }
+                } catch (Exception ignored) {
+                    // Keep login flow smooth even if notifications fail to load.
+                }
+            }
+        }.execute();
     }
 
     public static void main(String[] args) {

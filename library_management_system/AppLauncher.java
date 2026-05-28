@@ -10,7 +10,8 @@ import javax.swing.UIManager;
 public final class AppLauncher {
 
     private static final String SERVICE_ACCOUNT_KEY = "firebase.serviceAccount";
-    private static final String BUNDLED_SERVICE_ACCOUNT_RESOURCE = "/library_management_system/e-library-service-account.json";
+    private static final Path PROJECT_SERVICE_ACCOUNT = Path.of("library_management_system", "e-library.json");
+    private static final Path ROOT_SERVICE_ACCOUNT = Path.of("e-library.json");
 
     private AppLauncher() {
     }
@@ -55,26 +56,16 @@ public final class AppLauncher {
             return;
         }
 
-        if (hasBundledServiceAccount()) {
-            return;
-        }
-
-        Path localKey = Path.of("library_management_system", "e-library-service-account.json");
-        if (Files.exists(localKey)) {
-            System.setProperty(SERVICE_ACCOUNT_KEY, localKey.toString());
-            saveSetting(localKey.toString());
-            return;
-        }
-
-        Path rootKey = Path.of("e-library-service-account.json");
-        if (Files.exists(rootKey)) {
-            System.setProperty(SERVICE_ACCOUNT_KEY, rootKey.toString());
-            saveSetting(rootKey.toString());
+        Path localCredential = findLocalServiceAccount();
+        if (localCredential != null) {
+            String selectedPath = localCredential.toAbsolutePath().toString();
+            System.setProperty(SERVICE_ACCOUNT_KEY, selectedPath);
+            saveSetting(selectedPath);
             return;
         }
 
         if (GraphicsEnvironment.isHeadless()) {
-            throw new IllegalStateException("No Firebase service-account JSON found.");
+            throw new IllegalStateException("No external Firebase service-account JSON was configured.");
         }
 
         JFileChooser chooser = new JFileChooser();
@@ -89,8 +80,14 @@ public final class AppLauncher {
         saveSetting(selectedPath);
     }
 
-    private static boolean hasBundledServiceAccount() {
-        return AppLauncher.class.getResourceAsStream(BUNDLED_SERVICE_ACCOUNT_RESOURCE) != null;
+    private static Path findLocalServiceAccount() {
+        if (Files.exists(PROJECT_SERVICE_ACCOUNT)) {
+            return PROJECT_SERVICE_ACCOUNT;
+        }
+        if (Files.exists(ROOT_SERVICE_ACCOUNT)) {
+            return ROOT_SERVICE_ACCOUNT;
+        }
+        return null;
     }
 
     private static void saveSetting(String serviceAccountPath) {

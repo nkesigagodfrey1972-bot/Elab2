@@ -47,8 +47,12 @@ public final class UserSession {
     public static boolean canViewReports()    { return isViewer(); }
     /** Can manage fines (mark paid/waived) */
     public static boolean canManageFines()    { return isLibrarian(); }
+    /** Can create reservations/bookings */
+    public static boolean canCreateReservations() { return isViewer(); }
     /** Can manage reservations */
     public static boolean canManageReservations() { return isAssistant(); }
+    /** Can receive login notifications for incoming bookings */
+    public static boolean canReceiveReservationNotifications() { return isLibrarian(); }
     /** Can access settings */
     public static boolean canAccessSettings() { return isAdmin(); }
     /** Can view audit logs */

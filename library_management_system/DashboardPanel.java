@@ -12,6 +12,7 @@ import java.awt.GridLayout;
 import java.awt.RenderingHints;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import javax.swing.BorderFactory;
@@ -106,14 +107,32 @@ public class DashboardPanel extends JPanel {
         JPanel actionsCard = UiTheme.makeCard();
         actionsCard.setLayout(new BorderLayout(0, 12));
         JLabel actTitle = UiTheme.makeSectionTitle("Quick Actions");
-        JPanel btnGrid = new JPanel(new GridLayout(2, 3, 10, 10));
+        JPanel btnGrid = new JPanel(new GridLayout(0, 3, 10, 10));
         btnGrid.setOpaque(false);
-        btnGrid.add(quickBtn("+ Add Book",          () -> mainWindow.navigateTo(MainWindow.PANEL_BOOKS)));
-        btnGrid.add(quickBtn("\uD83D\uDCE4 Issue Book",      () -> mainWindow.navigateTo(MainWindow.PANEL_ISSUE)));
-        btnGrid.add(quickBtn("\uD83D\uDCE5 Return Book",     () -> mainWindow.navigateTo(MainWindow.PANEL_RETURN)));
-        btnGrid.add(quickBtn("+ Register Member",   () -> mainWindow.navigateTo(MainWindow.PANEL_MEMBERS)));
-        btnGrid.add(quickBtn("\uD83D\uDCC5 Reservations",    () -> mainWindow.navigateTo(MainWindow.PANEL_RESERVATIONS)));
-        btnGrid.add(quickBtn("\uD83D\uDCCA Reports",         () -> mainWindow.navigateTo(MainWindow.PANEL_REPORTS)));
+        java.util.List<JButton> quickActions = new ArrayList<>();
+        if (UserSession.canManageBooks()) {
+            quickActions.add(quickBtn("+ Add Book", () -> mainWindow.navigateTo(MainWindow.PANEL_BOOKS)));
+            quickActions.add(quickBtn("\uD83D\uDCE4 Issue Book", () -> mainWindow.navigateTo(MainWindow.PANEL_ISSUE)));
+            quickActions.add(quickBtn("\uD83D\uDCE5 Return Book", () -> mainWindow.navigateTo(MainWindow.PANEL_RETURN)));
+            quickActions.add(quickBtn("+ Register Member", () -> mainWindow.navigateTo(MainWindow.PANEL_MEMBERS)));
+            quickActions.add(quickBtn("\uD83D\uDCC5 Reservations", () -> mainWindow.navigateTo(MainWindow.PANEL_RESERVATIONS)));
+            quickActions.add(quickBtn("\uD83D\uDCCA Reports", () -> mainWindow.navigateTo(MainWindow.PANEL_REPORTS)));
+        } else if (UserSession.canIssueReturn()) {
+            quickActions.add(quickBtn("\uD83D\uDCE4 Issue Book", () -> mainWindow.navigateTo(MainWindow.PANEL_ISSUE)));
+            quickActions.add(quickBtn("\uD83D\uDCE5 Return Book", () -> mainWindow.navigateTo(MainWindow.PANEL_RETURN)));
+            quickActions.add(quickBtn("\uD83D\uDCC5 Manage Reservations", () -> mainWindow.navigateTo(MainWindow.PANEL_RESERVATIONS)));
+            quickActions.add(quickBtn("\uD83D\uDCDA Browse Books", () -> mainWindow.navigateTo(MainWindow.PANEL_BOOKS)));
+            quickActions.add(quickBtn("\uD83D\uDC65 Browse Members", () -> mainWindow.navigateTo(MainWindow.PANEL_MEMBERS)));
+            quickActions.add(quickBtn("\uD83D\uDCCA Reports", () -> mainWindow.navigateTo(MainWindow.PANEL_REPORTS)));
+        } else {
+            quickActions.add(quickBtn("\uD83D\uDCC5 Reserve a Book", () -> mainWindow.navigateTo(MainWindow.PANEL_RESERVATIONS)));
+            quickActions.add(quickBtn("\uD83D\uDCDA Browse Books", () -> mainWindow.navigateTo(MainWindow.PANEL_BOOKS)));
+            quickActions.add(quickBtn("\uD83D\uDC65 Browse Members", () -> mainWindow.navigateTo(MainWindow.PANEL_MEMBERS)));
+            quickActions.add(quickBtn("\uD83D\uDCCA Reports", () -> mainWindow.navigateTo(MainWindow.PANEL_REPORTS)));
+        }
+        for (JButton actionButton : quickActions) {
+            btnGrid.add(actionButton);
+        }
         actionsCard.add(actTitle, BorderLayout.NORTH);
         actionsCard.add(btnGrid,  BorderLayout.CENTER);
 
@@ -288,6 +307,11 @@ public class DashboardPanel extends JPanel {
             alertsPanel.add(buildAlert(
                 "\uD83D\uDCC5  " + d.pendingRes + " pending reservation(s) awaiting fulfillment.",
                 new Color(213, 234, 255), new Color(52, 152, 219), new Color(20, 60, 120)));
+        }
+        if (!UserSession.canManageReservations()) {
+            alertsPanel.add(buildAlert(
+                "\uD83D\uDD14  You can place a booking from the Reservations page whenever a book is needed.",
+                new Color(232, 245, 234), new Color(61, 145, 64), new Color(26, 84, 30)));
         }
         if (d.pendingFinesTotal > 0) {
             alertsPanel.add(buildAlert(
