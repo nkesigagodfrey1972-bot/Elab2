@@ -18,11 +18,13 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.io.InputStream;
 
 public final class FirebaseBootstrap {
 
     private static final HttpClient HTTP = HttpClient.newHttpClient();
     private static final String SCOPE = "https://www.googleapis.com/auth/datastore https://www.googleapis.com/auth/cloud-platform";
+    private static final String BUNDLED_SERVICE_ACCOUNT_RESOURCE = "/library_management_system/e-library-service-account.json";
 
     private FirebaseBootstrap() {
     }
@@ -366,11 +368,17 @@ public final class FirebaseBootstrap {
             }
         }
 
-        if (credentialsPath == null || credentialsPath.isBlank()) {
-            return null;
+        String serviceAccountJson = null;
+        if (credentialsPath != null && !credentialsPath.isBlank()) {
+            serviceAccountJson = Files.readString(Path.of(credentialsPath));
+        } else {
+            try (InputStream bundledCredentials = FirebaseBootstrap.class.getResourceAsStream(BUNDLED_SERVICE_ACCOUNT_RESOURCE)) {
+                if (bundledCredentials == null) {
+                    return null;
+                }
+                serviceAccountJson = new String(bundledCredentials.readAllBytes(), StandardCharsets.UTF_8);
+            }
         }
-
-        String serviceAccountJson = Files.readString(Path.of(credentialsPath));
         return new ServiceAccount(
             extractJsonString(serviceAccountJson, "project_id"),
             extractJsonString(serviceAccountJson, "client_email"),

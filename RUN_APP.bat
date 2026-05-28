@@ -1,4 +1,4 @@
 @echo off
 setlocal
 cd /d "%~dp0"
-java -jar "elab-library-smooth.jar"
+java -jar "elab-library-portable.jar"

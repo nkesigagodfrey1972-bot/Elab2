@@ -10,6 +10,7 @@ import javax.swing.UIManager;
 public final class AppLauncher {
 
     private static final String SERVICE_ACCOUNT_KEY = "firebase.serviceAccount";
+    private static final String BUNDLED_SERVICE_ACCOUNT_RESOURCE = "/library_management_system/e-library-service-account.json";
 
     private AppLauncher() {
     }
@@ -54,6 +55,10 @@ public final class AppLauncher {
             return;
         }
 
+        if (hasBundledServiceAccount()) {
+            return;
+        }
+
         Path localKey = Path.of("library_management_system", "e-library-service-account.json");
         if (Files.exists(localKey)) {
             System.setProperty(SERVICE_ACCOUNT_KEY, localKey.toString());
@@ -82,6 +87,10 @@ public final class AppLauncher {
         String selectedPath = chooser.getSelectedFile().getAbsolutePath();
         System.setProperty(SERVICE_ACCOUNT_KEY, selectedPath);
         saveSetting(selectedPath);
+    }
+
+    private static boolean hasBundledServiceAccount() {
+        return AppLauncher.class.getResourceAsStream(BUNDLED_SERVICE_ACCOUNT_RESOURCE) != null;
     }
 
     private static void saveSetting(String serviceAccountPath) {
