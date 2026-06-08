@@ -36,7 +36,7 @@ Built with Java Swing and Firebase Firestore, this system provides a modern, pro
 Place your Firebase service account JSON file in the project root or at:
 
 ```
-library_management_system/e-library-service-account.json
+library_management_system/e-library.json
 ```
 
 Alternatively, set the environment variable:
